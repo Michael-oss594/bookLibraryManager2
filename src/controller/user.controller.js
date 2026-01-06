@@ -21,7 +21,7 @@ const signup = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const otpExpiry = Date.now() + 10 * 60 * 1000; // OTP valid for 10 minutes (timestamp)
+        const otpExpiry = Date.now() + 10 * 60 * 1000; // OTP valid for 10 mins
 
         const newUser = new User({
             name,
@@ -67,7 +67,7 @@ const comparePassword = await bcrypt.compare(password, user.password);
         }
         const token = jwt.sign({ id: user._id, name: user.name }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-        // send login notification (non-blocking won't be awaited to avoid delaying response)
+        // send login notification 
         emailService.sendLoginNotification(user.email, user.name, new Date().toLocaleString()).catch(err => console.error('Login email error', err));
 
         return res.status(200).json({ message: 'Login successful', token });
@@ -93,16 +93,13 @@ const forgetPassword = async (req, res) => {
                 user.otpExpiry = Date.now() + 40 * 60 * 1000;
                 await user.save();
 
-                // build reset link for frontend (optional)
+              
                 const frontendBase = process.env.FRONTEND_URL || '';
                 const resetLink = frontendBase
                     ? `${frontendBase.replace(/\/$/, '')}/reset-password?email=${encodeURIComponent(email)}&otp=${otp}`
                     : '';
 
-                // send OTP email (await to ensure mail attempted)
-                // await emailService.sendPasswordResetOtp(email, user.name, otp, resetLink);
-
-                // notify user of forget password (send OTP)
+            
 emailService
   .sendForgetPasswordOTP(user.email, user.name, otp)
   .catch(err => console.error('Forget password email error', err));
